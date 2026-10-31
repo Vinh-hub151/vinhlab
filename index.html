@@ -1,0 +1,692 @@
+<title>VinhLab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: home-screen style app grid, framed by a terminal-prompt hero — built phone-first since the apps are too */
+  :root {
+    --bg: #15120F;
+    --surface: #1F1A15;
+    --surface-2: #2A231C;
+    --fg: #F2ECE2;
+    --muted: #B8AC9A;
+    --accent: #E8A33D;
+    --accent-2: #5FB3AA;
+    --border: rgba(242,236,226,0.14);
+    --font-display: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #FAF6EF;
+      --surface: #FFFFFF;
+      --surface-2: #F1EADC;
+      --fg: #221C14;
+      --muted: #6B6052;
+      --accent: #C77B1F;
+      --accent-2: #2E7E76;
+      --border: rgba(34,28,20,0.14);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF6EF;
+    --surface: #FFFFFF;
+    --surface-2: #F1EADC;
+    --fg: #221C14;
+    --muted: #6B6052;
+    --accent: #C77B1F;
+    --accent-2: #2E7E76;
+    --border: rgba(34,28,20,0.14);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    line-height: 1.55;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--bg);
+  }
+  a { color: inherit; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .narrow { max-width: 640px; margin: 0 auto; }
+
+  /* header */
+  header.site {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+  .brand .dot { color: var(--accent); }
+  nav.links { display: flex; gap: 22px; flex-wrap: wrap; }
+  nav.links a {
+    text-decoration: none;
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  nav.links a:hover { color: var(--fg); }
+
+  /* hero */
+  .hero { padding-block: 56px 40px; }
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 14px;
+  }
+  .eyebrow::before { content: "$ "; opacity: 0.7; }
+  h1.title {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 5vw, 2.7rem);
+    line-height: 1.15;
+    margin: 0 0 18px;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  h1.title .accent { color: var(--accent); }
+  .hero-sub {
+    font-size: 1.02rem;
+    color: var(--muted);
+    max-width: 56ch;
+    margin: 0 0 28px;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 28px;
+    align-items: center;
+  }
+  @media (max-width: 760px) {
+    .hero-grid { grid-template-columns: 1fr; }
+  }
+
+  /* terminal card */
+  .term {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px -30px rgba(0,0,0,0.6);
+  }
+  .term-bar {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .term-bar span {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border);
+  }
+  .term-body {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    padding: 16px;
+    color: var(--muted);
+    white-space: pre-wrap;
+  }
+  .term-body .ok { color: var(--accent-2); }
+  .term-body .prompt { color: var(--accent); }
+
+  .stat-row { display: flex; gap: 28px; margin-top: 30px; flex-wrap: wrap; }
+  .stat .num {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .stat .label { font-size: 0.78rem; color: var(--muted); }
+
+  /* sections */
+  section { padding-block: 44px; }
+  .section-head { margin-bottom: 26px; }
+  .section-head .eyebrow { margin-bottom: 8px; }
+  h2.h { font-size: 1.5rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-sub { color: var(--muted); font-size: 0.95rem; margin: 0; }
+  hr.rule { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* app grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .badge {
+    width: 44px; height: 44px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #15120F;
+    flex-shrink: 0;
+  }
+  .card h3 { margin: 0; font-size: 1.05rem; }
+  .card p.desc { margin: 0; color: var(--muted); font-size: 0.88rem; flex: 1; }
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .chip.status-dev { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+  .chip.status-live { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 40%, var(--border)); }
+  .chip.status-idea { color: var(--muted); }
+  .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--fg);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #15120F; }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; }
+  .btn.small { padding: 6px 11px; font-size: 0.78rem; }
+  .btn.danger { color: #D86B5A; }
+  .btn[disabled] { opacity: 0.55; cursor: default; }
+
+  .empty {
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .empty strong { color: var(--fg); }
+
+  /* about */
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 760px) { .about-grid { grid-template-columns: 1fr; } }
+  .about-grid p { color: var(--muted); margin: 0 0 14px; font-size: 0.95rem; }
+  ul.steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; }
+  ul.steps li { margin-bottom: 8px; }
+  ul.steps b { color: var(--fg); }
+
+  /* admin */
+  .admin-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .lock-box { max-width: 340px; margin: 0 auto; text-align: center; }
+  .lock-box p { color: var(--muted); font-size: 0.88rem; }
+  input, select, textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--fg);
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .field { margin-bottom: 14px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+  .note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+  }
+  .note strong { color: var(--accent); }
+  .admin-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-top: 18px; }
+  @media (max-width: 760px) { .admin-grid { grid-template-columns: 1fr; } }
+  .mine-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.86rem;
+  }
+  .mine-row:last-child { border-bottom: none; }
+  .mine-row .nm { font-weight: 700; }
+  .mine-row .ty { color: var(--muted); font-size: 0.76rem; }
+  .form-note { font-size: 0.82rem; margin-top: 10px; min-height: 1.2em; }
+  .form-note.ok { color: var(--accent-2); }
+  .form-note.err { color: #D86B5A; }
+
+  /* footer */
+  footer {
+    padding-block: 32px 48px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer .foot-inner { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+
+<header class="site">
+  <div class="wrap nav-inner">
+    <a href="#top" class="brand">Vinh<span class="dot">Lab</span></a>
+    <nav class="links">
+      <a href="#apps">Ứng dụng</a>
+      <a href="#tools">Công cụ</a>
+      <a href="#about">Giới thiệu</a>
+      <a href="#admin">Quản lý</a>
+    </nav>
+  </div>
+</header>
+
+<div id="top"></div>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">build --platform android</p>
+      <h1 class="title">App làm ra <span class="accent">ngay trên điện thoại</span>, không cần máy tính.</h1>
+      <p class="hero-sub">Portfolio của Vinh — toàn bộ app ở đây được viết và build bằng Termux, ngay trên chiếc điện thoại đang cầm trên tay. Không studio, không team, chỉ một cái màn hình 6 inch và rất nhiều lần build lại.</p>
+      <div class="chip-row">
+        <a href="#apps" class="btn primary">Xem ứng dụng</a>
+        <a href="#about" class="btn ghost">Câu chuyện</a>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="statApps">3</div><div class="label">Dự án app</div></div>
+        <div class="stat"><div class="num">Termux</div><div class="label">Môi trường build</div></div>
+        <div class="stat"><div class="num">Expo / EAS</div><div class="label">Công cụ chính</div></div>
+      </div>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span></span><span></span><span></span></div>
+      <div class="term-body"><span class="prompt">~/apps $</span> eas build -p android --profile preview
+<span class="ok">✓</span> Installing dependencies
+<span class="ok">✓</span> Bundling JavaScript
+<span class="ok">✓</span> Build queued on EAS
+
+<span class="prompt">~/apps $</span> ls
+editv/   anime-3d/   vplay/
+
+<span class="prompt">~/apps $</span> <span style="opacity:.5">_</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<section id="apps">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">của tôi</p>
+      <h2 class="h">Ứng dụng đang làm</h2>
+      <p class="section-sub">3 app đang ở các giai đoạn khác nhau — từ ý tưởng đến build thật trên máy.</p>
+    </div>
+    <div class="grid" id="mineGrid"></div>
+  </div>
+</section>
+
+<section id="tools">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">bên ngoài</p>
+      <h2 class="h">Công cụ miễn phí hay dùng</h2>
+      <p class="section-sub">Phần mềm/app miễn phí &amp; hợp pháp (freeware, mã nguồn mở) — thêm ở khu Quản lý bên dưới.</p>
+    </div>
+    <div class="grid" id="toolGrid"></div>
+    <p class="empty" id="toolEmpty"><strong>Chưa có mục nào.</strong><br/>Vào khu Quản lý bên dưới để thêm công cụ miễn phí bạn hay dùng.</p>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<section id="about">
+  <div class="wrap about-grid">
+    <div>
+      <p class="eyebrow">giới thiệu</p>
+      <h2 class="h">Dev một người, trong túi áo</h2>
+      <p>Vinh code hoàn toàn trên điện thoại bằng Termux — không laptop, không desktop. Mỗi app ở đây đi từ ý tưởng, qua rất nhiều lần build lỗi, màn hình trắng, đến bản chạy được.</p>
+      <p>Trang này là nơi lưu lại từng dự án khi chúng lớn dần — app nào xong trước thì có link tải trước, app nào còn đang vẽ ý tưởng thì cứ để nguyên trạng thái "đang làm".</p>
+    </div>
+    <div>
+      <p class="eyebrow">quy trình</p>
+      <ul class="steps">
+        <li><b>01. Ý tưởng</b> — chốt tính năng chính, màu chủ đạo, đối tượng dùng.</li>
+        <li><b>02. Build trên Termux</b> — dựng bằng Expo/EAS, chạy thử ngay trên máy.</li>
+        <li><b>03. Sửa lỗi thật</b> — màn hình trắng, crash, build lại — phần tốn thời gian nhất.</li>
+        <li><b>04. Lên đây</b> — thêm vào portfolio khi có bản chạy ổn để chia sẻ.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<section id="admin">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">chỉ dành cho Vinh</p>
+      <h2 class="h">Quản lý sản phẩm</h2>
+      <p class="section-sub">Thêm app của mình hoặc công cụ miễn phí hợp pháp vào trang này.</p>
+    </div>
+
+    <div class="admin-wrap">
+      <div id="lockBox" class="lock-box">
+        <h3 style="margin:0 0 6px">🔒 Khu vực riêng</h3>
+        <p>Nhập mật khẩu để thêm/sửa sản phẩm.</p>
+        <div class="field"><input type="password" id="pwInput" placeholder="Mật khẩu" /></div>
+        <button class="btn primary" id="pwBtn" style="width:100%">Vào khu quản lý</button>
+        <p class="form-note" id="pwNote"></p>
+      </div>
+
+      <div id="adminPanel" hidden>
+        <div class="note"><strong>Lưu ý:</strong> chỉ thêm app do bạn làm, hoặc phần mềm miễn phí / mã nguồn mở hợp pháp có link gốc rõ ràng. Không thêm link crack, mod menu hay file từ nguồn không rõ bản quyền.</div>
+
+        <div class="admin-grid">
+          <form id="addForm">
+            <div class="field">
+              <label for="fName">Tên sản phẩm *</label>
+              <input type="text" id="fName" required placeholder="VD: EditV" />
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="fType">Loại</label>
+                <select id="fType">
+                  <option value="mine">App của tôi</option>
+                  <option value="tool">Công cụ miễn phí (bên ngoài)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="fStatus">Trạng thái</label>
+                <select id="fStatus">
+                  <option value="idea">Lên ý tưởng</option>
+                  <option value="dev">Đang phát triển</option>
+                  <option value="live">Đã có bản tải</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fDesc">Mô tả ngắn</label>
+              <textarea id="fDesc" rows="2" placeholder="App/công cụ này dùng để làm gì..."></textarea>
+            </div>
+            <div class="field">
+              <label for="fLink">Link thật (nếu có)</label>
+              <input type="url" id="fLink" placeholder="https://..." />
+            </div>
+            <div class="field">
+              <label for="fTag">Nhãn ngắn (vd: Expo · Termux)</label>
+              <input type="text" id="fTag" placeholder="Expo · Termux" />
+            </div>
+            <button type="submit" class="btn primary" style="width:100%">Thêm vào trang</button>
+            <p class="form-note" id="addNote"></p>
+          </form>
+
+          <div>
+            <h3 style="margin:0 0 10px;font-size:0.95rem">Mục đã thêm</h3>
+            <div id="mineList"></div>
+            <p class="empty" id="mineListEmpty" style="margin-top:10px">Chưa thêm mục nào ở đây.</p>
+            <button class="btn ghost small" id="logoutBtn" style="margin-top:16px">Thoát khu quản lý</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>VinhLab — portfolio app làm từ điện thoại.</div>
+    <div>Dữ liệu khu Quản lý lưu trong trình duyệt này, không đồng bộ thiết bị khác.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORE_KEY = "pocketdev_items_v1";
+  var PW = "vinh2026";
+
+  var BASE_APPS = [
+    {
+      id: "editv",
+      name: "EditV",
+      desc: "App chỉnh sửa video/ảnh/đồ hoạ kiểu CapCut, không AI, không cần đăng nhập. Tông màu xanh dương.",
+      status: "dev",
+      tag: "Expo · Termux",
+      link: "",
+      letters: "EV",
+      color: "#3E7CB1"
+    },
+    {
+      id: "anime3d",
+      name: "Anime 3D",
+      desc: "Chuyển ảnh anime thành mô hình 3D (.glb) xem xoay được trên máy.",
+      status: "idea",
+      tag: "Expo · Termux",
+      link: "",
+      letters: "A3",
+      color: "#8E6BB8"
+    },
+    {
+      id: "vplay",
+      name: "VPlay",
+      desc: "App nghe nhạc offline, tự quét nhạc có sẵn trong máy, giao diện gọn gàng.",
+      status: "idea",
+      tag: "Expo · Termux",
+      link: "",
+      letters: "VP",
+      color: "#4F9A8E"
+    }
+  ];
+
+  var STATUS_LABEL = { idea: "Lên ý tưởng", dev: "Đang phát triển", live: "Đã có bản tải" };
+  var STATUS_CLASS = { idea: "status-idea", dev: "status-dev", live: "status-live" };
+
+  function loadExtra() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveExtra(list) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function badgeColorFor(name) {
+    var palette = ["#3E7CB1", "#8E6BB8", "#4F9A8E", "#C77B1F", "#B85C72"];
+    var sum = 0;
+    for (var i = 0; i < name.length; i++) sum += name.charCodeAt(i);
+    return palette[sum % palette.length];
+  }
+
+  function appCard(item, removable) {
+    var letters = (item.letters || item.name.slice(0, 2)).toUpperCase();
+    var color = item.color || badgeColorFor(item.name);
+    var linkHtml = item.link
+      ? '<a class="btn primary small" href="' + escapeHtml(item.link) + '" target="_blank" rel="noopener">Tải về</a>'
+      : '<button class="btn small" disabled>Chưa có link</button>';
+    var removeHtml = removable
+      ? '<button class="btn danger small" data-remove="' + escapeHtml(item.id) + '" style="margin-left:6px">Xoá</button>'
+      : "";
+    return (
+      '<article class="card">' +
+      '<div class="badge" style="background:' + color + '">' + escapeHtml(letters) + "</div>" +
+      "<h3>" + escapeHtml(item.name) + "</h3>" +
+      '<p class="desc">' + escapeHtml(item.desc || "") + "</p>" +
+      '<div class="chip-row">' +
+      '<span class="chip ' + STATUS_CLASS[item.status] + '">' + STATUS_LABEL[item.status] + "</span>" +
+      (item.tag ? '<span class="chip">' + escapeHtml(item.tag) + "</span>" : "") +
+      "</div>" +
+      '<div class="card-foot">' + linkHtml + removeHtml + "</div>" +
+      "</article>"
+    );
+  }
+
+  function render() {
+    var extra = loadExtra();
+    var mineExtra = extra.filter(function (i) { return i.type === "mine"; });
+    var toolExtra = extra.filter(function (i) { return i.type === "tool"; });
+
+    var mineAll = BASE_APPS.map(function (a) { return appCard(a, false); })
+      .concat(mineExtra.map(function (a) { return appCard(a, true); }));
+    document.getElementById("mineGrid").innerHTML = mineAll.join("");
+    document.getElementById("statApps").textContent = BASE_APPS.length + mineExtra.length;
+
+    var toolGrid = document.getElementById("toolGrid");
+    var toolEmpty = document.getElementById("toolEmpty");
+    if (toolExtra.length) {
+      toolGrid.innerHTML = toolExtra.map(function (a) { return appCard(a, true); }).join("");
+      toolEmpty.hidden = true;
+    } else {
+      toolGrid.innerHTML = "";
+      toolEmpty.hidden = false;
+    }
+
+    var mineList = document.getElementById("mineList");
+    var mineListEmpty = document.getElementById("mineListEmpty");
+    if (extra.length) {
+      mineList.innerHTML = extra
+        .map(function (i) {
+          return (
+            '<div class="mine-row"><div><span class="nm">' +
+            escapeHtml(i.name) +
+            '</span><br/><span class="ty">' +
+            (i.type === "mine" ? "App của tôi" : "Công cụ ngoài") +
+            "</span></div><button class=\"btn danger small\" data-remove=\"" +
+            escapeHtml(i.id) +
+            '">Xoá</button></div>'
+          );
+        })
+        .join("");
+      mineListEmpty.hidden = true;
+    } else {
+      mineList.innerHTML = "";
+      mineListEmpty.hidden = false;
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-remove");
+    var list = loadExtra().filter(function (i) { return i.id !== id; });
+    saveExtra(list);
+    render();
+  });
+
+  // lock
+  var lockBox = document.getElementById("lockBox");
+  var adminPanel = document.getElementById("adminPanel");
+  var pwBtn = document.getElementById("pwBtn");
+  var pwInput = document.getElementById("pwInput");
+  var pwNote = document.getElementById("pwNote");
+
+  function unlock() {
+    lockBox.hidden = true;
+    adminPanel.hidden = false;
+  }
+  pwBtn.addEventListener("click", function () {
+    if (pwInput.value === PW) {
+      pwNote.textContent = "";
+      unlock();
+    } else {
+      pwNote.textContent = "Sai mật khẩu.";
+      pwNote.className = "form-note err";
+    }
+  });
+  pwInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") pwBtn.click();
+  });
+  document.getElementById("logoutBtn").addEventListener("click", function () {
+    adminPanel.hidden = true;
+    lockBox.hidden = false;
+    pwInput.value = "";
+  });
+
+  // add form
+  document.getElementById("addForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = document.getElementById("fName").value.trim();
+    var note = document.getElementById("addNote");
+    if (!name) {
+      note.textContent = "Nhập tên sản phẩm đã.";
+      note.className = "form-note err";
+      return;
+    }
+    var item = {
+      id: "x" + Date.now(),
+      name: name,
+      type: document.getElementById("fType").value,
+      status: document.getElementById("fStatus").value,
+      desc: document.getElementById("fDesc").value.trim(),
+      link: document.getElementById("fLink").value.trim(),
+      tag: document.getElementById("fTag").value.trim(),
+      letters: name.slice(0, 2)
+    };
+    var list = loadExtra();
+    list.push(item);
+    saveExtra(list);
+    this.reset();
+    note.textContent = "Đã thêm vào trang.";
+    note.className = "form-note ok";
+    render();
+  });
+
+  render();
+})();
+</script>
